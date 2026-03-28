@@ -23,4 +23,103 @@
 <body id="mainBody">
 
 <header>
-    <div id="title" style="font-weight: bold; font-size: 1.2rem;">MI-
+    <div id="title" style="font-weight: bold; font-size: 1.2rem;">MI-MOLLETTE</div>
+    <select class="lang-select" id="langPicker" onchange="changeLang(this.value)">
+        <option value="fr">Français</option>
+        <option value="en">English</option>
+        <option value="ar">عربي</option>
+    </select>
+</header>
+
+<div id="container">
+    <div id="cardList"></div>
+    <div class="empty-msg" id="emptyMsg"></div>
+</div>
+
+<div class="controls">
+    <label class="upload-label" id="uploadBtnText" for="fileInput">Ajouter une carte</label>
+    <input type="file" id="fileInput" accept="image/*" multiple>
+</div>
+
+<script>
+    const translations = {
+        fr: { title: "MI-MOLLETTE", add: "Ajouter une carte", empty: "Aucune carte.<br>Appuyez sur le bouton vert pour en ajouter une.", confirm: "Supprimer cette carte ?", dir: "ltr" },
+        en: { title: "MI-MOLLETTE", add: "Add a Card", empty: "No cards yet.<br>Tap the green button to add one.", confirm: "Remove this card?", dir: "ltr" },
+        ar: { title: "مي-موليت", add: "إضافة بطاقة", empty: "لا توجد بطاقات.<br>اضغط على الزر الأخضر للإضافة.", confirm: "حذف هذه البطاقة؟", dir: "rtl" }
+    };
+
+    let currentLang = 'fr';
+
+    function changeLang(lang) {
+        currentLang = lang;
+        const ui = translations[lang];
+        
+        // Update UI Text
+        document.getElementById('mainBody').dir = ui.dir;
+        document.getElementById('title').innerText = ui.title;
+        document.getElementById('uploadBtnText').innerText = ui.add;
+        
+        // Refresh the list to update empty message and alignment
+        renderCards();
+    }
+
+    const fileInput = document.getElementById('fileInput');
+    const cardList = document.getElementById('cardList');
+    const emptyMsg = document.getElementById('emptyMsg');
+
+    window.onload = () => {
+        changeLang('fr');
+    };
+
+    fileInput.onchange = (e) => {
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
+
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                saveCard(event.target.result);
+            };
+            reader.readAsDataURL(file);
+        });
+        
+        // Clear input so user can add the same file again if they want
+        fileInput.value = "";
+    };
+
+    function saveCard(data) {
+        let cards = JSON.parse(localStorage.getItem('miMolletteCards') || '[]');
+        cards.push(data);
+        localStorage.setItem('miMolletteCards', JSON.stringify(cards));
+        renderCards();
+    }
+
+    function deleteCard(index) {
+        if(confirm(translations[currentLang].confirm)) {
+            let cards = JSON.parse(localStorage.getItem('miMolletteCards') || '[]');
+            cards.splice(index, 1);
+            localStorage.setItem('miMolletteCards', JSON.stringify(cards));
+            renderCards();
+        }
+    }
+
+    function renderCards() {
+        const cards = JSON.parse(localStorage.getItem('miMolletteCards') || '[]');
+        
+        if (cards.length === 0) {
+            emptyMsg.innerHTML = translations[currentLang].empty;
+            cardList.innerHTML = "";
+        } else {
+            emptyMsg.innerHTML = "";
+            cardList.innerHTML = cards.map((src, index) => `
+                <div class="card-wrapper">
+                    <img src="${src}" alt="Loyalty Card">
+                    <button class="delete-btn" onclick="deleteCard(${index})">✕</button>
+                </div>
+            `).join('');
+        }
+    }
+</script>
+
+</body>
+</html>
